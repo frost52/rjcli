@@ -224,6 +224,20 @@ def get_creds(ppdmuri, token, cred):
 			raise Exception('Failed to query {}, code: {}, body: {}'.format(uri, response.status_code, response.text))
 		return response.json()['content']
 
+def create_cred(ppdmuri, token, credtype, credname, username, password):
+	'''This function creates new credentials'''
+	uri = ppdmuri + 'credentials/'
+	headers = {'Content-Type': 'application/json', 'Authorization': 'Bearer {}'.format(token)}
+	payload = '{"type": "%s", "name": "%s", "username": "%s", "password": "%s"}' % (credtype, credname, username, password)
+	try:
+		response = requests.post(uri, data=payload, headers=headers, verify=False)
+		response.raise_for_status()
+	except requests.exceptions.RequestException as err:
+		print("The call {} {} failed with exception:{}".format(response.request.method, response.url, err))
+	if (response.status_code != 201):
+		raise Exception('Failed to create {}, code: {}, body: {}'.format(uri, response.status_code, response.text))
+	print ("Create credential name {} successfully".format(username))
+
 def delete_cred(ppdmuri, token, credid, cred):
 	'''This function takes credentials ID and credentials name to delete'''
 	uri = ppdmuri + 'credentials/'+credid+'/'
@@ -587,8 +601,22 @@ def report(backupsize):
 
 @my_app.command()
 @click.option('--assetgroup', required=False, help="Displays backup size of asset or assets")
-def create(assetgroup):
-	"""This command displays i"""
+@click.option('--credtype', required=False, help="Credentials type")
+@click.option('--credname', required=False, help="Credentials name")
+@click.option('--username', required=False, help="Username")
+@click.option('--password', required=False, help="Password")
+def create(assetgroup, credtype, credname, username, password):
+	"""This command creates new credential \n
+	Example commands: \n
+	create --assetgroup TEXT \n
+	create --credtype <credtype> --credname <credname> --username <username> --password <password>
+	"""
+	if credtype and credname and username and password:
+		create_cred(ppdmuri, token, credtype, credname, username, password)
+	if assetgroup:
+		"""This command displays i"""
+	else:
+		print ("Please select the correct option, type command --help for more information")
 
 @my_app.command()
 @click.option('--cred', required=False, help="Deletes selected credentials")
